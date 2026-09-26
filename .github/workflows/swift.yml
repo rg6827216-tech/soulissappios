@@ -17,7 +17,7 @@ jobs:
     - uses: actions/checkout@v4
     - name: Build
       run: |
-        DESTINATION_ID=$(xcrun simctl list devices available --json | python3 -c 'import json,re,sys; devices=json.load(sys.stdin).get("devices", {}); candidates=[]; [candidates.extend([((int(m.group(1)), int(m.group(2) or 0)), d.get("name",""), d.get("udid","")) for d in runtime_devices if d.get("isAvailable") and d.get("name","").startswith("iPhone")]) for runtime, runtime_devices in devices.items() for m in [re.search(r"iOS[- ](\d+)(?:[-.](\d+))?", runtime)] if m]; print(sorted(candidates, key=lambda x: (x[0][0], x[0][1], x[1]), reverse=True)[0][2] if candidates else "")')
+        DESTINATION_ID=$(xcrun simctl list devices available --json | python3 .github/scripts/select_ios_simulator_udid.py)
         if [ -z "$DESTINATION_ID" ]; then
           echo "No available iOS iPhone simulator found"
           exit 1
