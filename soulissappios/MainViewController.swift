@@ -13,62 +13,54 @@ class MainViewController: UIViewController, SocketerDelegate {
     @IBOutlet weak var testBtn: UIButton!
     @IBOutlet weak var ipAddressTextField: UITextField!
     @IBOutlet weak var responseTextView: UITextView!
-    
-    var socketer : Socketer!
-    
+
+    var socketer: Socketer?
+
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
     }
 
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
-    }
-
-    @IBAction func sendAction(sender: AnyObject) {
-        
-        
-        if let ipAddressText = ipAddressTextField.text {
-            let net = NetUtils()
-            let ip = net.splitIPv4(ipAddressText)
-            let endMarker = NSData(bytes: [0xc, 0xb, 0x17 ,ip!.fourth, ip!.third, 0x6, 0x5, 0x8, 0xb1, 0x0, 0x0, 0x0] as [UInt8], length: 12)
-            if let sock = socketer {
-                
-                sock.send(endMarker)
-            } else  {
-                socketer = Socketer(socketerDelegate: self, IP: ipAddressText)
-                socketer.send(endMarker)
-            }
-
-            self.view.endEditing(true)
-            
-        } else {
-            let alertController = UIAlertController(title: "Souliss", message:
-                "You need to specify an IP", preferredStyle: UIAlertControllerStyle.Alert)
-            alertController.addAction(UIAlertAction(title: "Dismiss", style: UIAlertActionStyle.Default,handler: nil))
-            
-            self.presentViewController(alertController, animated: true, completion: nil)
+    @IBAction func sendAction(_ sender: Any) {
+        guard
+            let ipAddressText = ipAddressTextField.text,
+            let ip = NetUtils().splitIPv4(ip: ipAddressText)
+        else {
+            let alertController = UIAlertController(
+                title: "Souliss",
+                message: "You need to specify a valid IP",
+                preferredStyle: .alert
+            )
+            alertController.addAction(UIAlertAction(title: "Dismiss", style: .default))
+            present(alertController, animated: true)
+            return
         }
-        
+
+        let endMarker = Data([0xc, 0xb, 0x17, ip.fourth, ip.third, 0x6, 0x5, 0x8, 0xb1, 0x0, 0x0, 0x0])
+        if let sock = socketer {
+            sock.send(data: endMarker)
+        } else {
+            let socket = Socketer(socketerDelegate: self, IP: ipAddressText)
+            socketer = socket
+            socket.send(data: endMarker)
+        }
+
+        view.endEditing(true)
     }
-    
+
     func didConnect() {
-        responseTextView.text = responseTextView.text + "\n" + "Did Connect"
+        responseTextView.text = responseTextView.text + "\nDid Connect"
     }
-    
+
     func didSend() {
-        responseTextView.text = responseTextView.text + "\n" + "Did Send"
+        responseTextView.text = responseTextView.text + "\nDid Send"
     }
-    
-    func didReceiveData(didReceiveData data: NSData!) {
-        responseTextView.text = responseTextView.text + "\ndidReceiveData: " + "\(data)"
+
+    func didReceiveData(_ data: Data) {
+        responseTextView.text = responseTextView.text + "\ndidReceiveData: \(data)"
     }
-    
+
     func didNotSend() {
         responseTextView.text = responseTextView.text + "\nDid not Send !"
     }
-    
-
 }
-

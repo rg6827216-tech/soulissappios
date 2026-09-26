@@ -6,31 +6,28 @@
 //  Copyright (c) 2015 Souliss. All rights reserved.
 //
 
-import UIKit
 import XCTest
+@testable import soulissappios
 
-class soulissappiosTests: XCTestCase {
-    
-    override func setUp() {
-        super.setUp()
-        // Put setup code here. This method is called before the invocation of each test method in the class.
+final class soulissappiosTests: XCTestCase {
+
+    func testSplitIPv4ParsesFourOctets() {
+        let result = NetUtils().splitIPv4(ip: "192.168.0.1")
+
+        XCTAssertEqual(result?.first, 192)
+        XCTAssertEqual(result?.second, 168)
+        XCTAssertEqual(result?.third, 0)
+        XCTAssertEqual(result?.fourth, 1)
     }
-    
-    override func tearDown() {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
-        super.tearDown()
+
+    func testSplitIPv4RejectsInvalidAddresses() {
+        XCTAssertNil(NetUtils().splitIPv4(ip: ""))
+        XCTAssertNil(NetUtils().splitIPv4(ip: "192.168.0"))
+        XCTAssertNil(NetUtils().splitIPv4(ip: "192.168.0.999"))
     }
-    
-    func testExample() {
-        // This is an example of a functional test case.
-        XCTAssert(true, "Pass")
-    }
-    
+
     func testPerformanceExample() {
-        // This is an example of a performance test case.
-        self.measureBlock() {
-            // Put the code you want to measure the time of here.
+        measure {
         }
     }
-    
 }

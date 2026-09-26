@@ -9,10 +9,9 @@
 import Foundation
 
 protocol SocketerDelegate {
-    
+
     func didConnect()
     func didSend()
     func didNotSend()
-    func didReceiveData(didReceiveData data: NSData!)
-    
+    func didReceiveData(_ data: Data)
 }
