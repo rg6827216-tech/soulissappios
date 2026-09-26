@@ -17,6 +17,6 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Build
-      run: swift build -v
+      run: xcodebuild -workspace soulissappios.xcworkspace -scheme soulissappios -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO build
     - name: Run tests
-      run: swift test -v
+      run: xcodebuild -workspace soulissappios.xcworkspace -scheme soulissappios -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO test
