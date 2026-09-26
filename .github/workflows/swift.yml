@@ -25,4 +25,9 @@ jobs:
         echo "DESTINATION_ID=$DESTINATION_ID" >> "$GITHUB_ENV"
         xcodebuild -workspace soulissappios.xcworkspace -scheme soulissappios -destination "id=$DESTINATION_ID" build
     - name: Run tests
-      run: xcodebuild -workspace soulissappios.xcworkspace -scheme soulissappios -destination "id=$DESTINATION_ID" test
+      run: |
+        if [ -z "$DESTINATION_ID" ]; then
+          echo "No simulator destination configured"
+          exit 1
+        fi
+        xcodebuild -workspace soulissappios.xcworkspace -scheme soulissappios -destination "id=$DESTINATION_ID" test
