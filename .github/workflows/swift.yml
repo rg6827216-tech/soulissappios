@@ -39,4 +39,4 @@ jobs:
         raise SystemExit("No available iOS simulator found")
         PY
         )
-        xcodebuild -workspace soulissappios.xcworkspace -scheme soulissappios -destination "id=$SIMULATOR_UDID" CODE_SIGNING_ALLOWED=NO test
+        xcodebuild -workspace soulissappios.xcworkspace -scheme soulissappios -sdk iphonesimulator -destination "id=$SIMULATOR_UDID" CODE_SIGNING_ALLOWED=NO test
