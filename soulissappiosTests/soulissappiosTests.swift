@@ -76,6 +76,24 @@ final class soulissappiosTests: XCTestCase {
         XCTAssertEqual(viewController.responseTextView.text, "\nDid not Connect !")
     }
 
+    func testDidSendAppendsSuccessMessage() {
+        let viewController = MainViewController()
+        viewController.responseTextView = UITextView()
+
+        viewController.didSend()
+
+        XCTAssertEqual(viewController.responseTextView.text, "\nDid Send")
+    }
+
+    func testDidNotSendAppendsFailureMessage() {
+        let viewController = MainViewController()
+        viewController.responseTextView = UITextView()
+
+        viewController.didNotSend()
+
+        XCTAssertEqual(viewController.responseTextView.text, "\nDid not Send !")
+    }
+
     func testPerformanceExample() {
         measure {
         }
