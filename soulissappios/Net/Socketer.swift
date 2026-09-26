@@ -36,7 +36,7 @@ class Socketer: NSObject, GCDAsyncUdpSocketDelegate {
     func setupConnection() {
         socket = GCDAsyncUdpSocket(delegate: self, delegateQueue: .main)
         do {
-            try socket.bind(toPort: PORT)
+            try socket.bind(toPort: 0)
             try socket.connect(toHost: IP, onPort: PORT)
             try socket.beginReceiving()
         } catch {

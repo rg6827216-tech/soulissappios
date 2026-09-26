@@ -15,7 +15,7 @@ class MainViewController: UIViewController, SocketerDelegate {
     @IBOutlet weak var responseTextView: UITextView!
 
     var socketer: Socketer?
-    private var pendingPayload: Data?
+    var pendingPayload: Data?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -59,6 +59,7 @@ class MainViewController: UIViewController, SocketerDelegate {
     func didConnect() {
         responseTextView.text = responseTextView.text + "\nDid Connect"
         if let pendingPayload {
+            self.pendingPayload = nil
             socketer?.send(data: pendingPayload)
         }
     }
