@@ -7,62 +7,84 @@
 //
 
 import CocoaAsyncSocket
-
 import Foundation
 
 class Socketer: NSObject, GCDAsyncUdpSocketDelegate {
-    
-    var IP = ""
-    let PORT:UInt16 = 230
-    var socket:GCDAsyncUdpSocket!
-    var socketerDelegate:SocketerDelegate!
-    
+    private enum ConnectionState {
+        case ready
+        case failed
+        case closed
+    }
+
+    let IP: String
+    let PORT: UInt16 = 230
+    var socket: GCDAsyncUdpSocket!
+    var socketerDelegate: SocketerDelegate
+    private var connectionState = ConnectionState.ready
+
+    var canBeReused: Bool {
+        connectionState == .ready
+    }
+
     init(socketerDelegate intiSocketerDelegate: SocketerDelegate, IP: String) {
-        super.init()
         socketerDelegate = intiSocketerDelegate
         self.IP = IP
+        super.init()
         setupConnection()
     }
-    
-    func setupConnection(){
-        socket = GCDAsyncUdpSocket(delegate: self, delegateQueue: dispatch_get_main_queue())
+
+    func setupConnection() {
+        socket = GCDAsyncUdpSocket(delegate: self, delegateQueue: .main)
         do {
-            try socket.bindToPort(PORT)
-            try socket.connectToHost(IP, onPort: PORT)
+            try socket.bind(toPort: 0)
+            try socket.connect(toHost: IP, onPort: PORT)
             try socket.beginReceiving()
         } catch {
-            
+            connectionState = .failed
+            socketerDelegate.didNotConnect()
+            print("Socket setup failed: \(error)")
         }
-        
     }
-    
-    func udpSocket(sock: GCDAsyncUdpSocket!, didReceiveData data: NSData!, fromAddress address: NSData!,      withFilterContext filterContext: AnyObject!) {
-        print("incoming message: \(data)");
-        socketerDelegate.didReceiveData(didReceiveData: data)
+
+    func udpSocket(_ sock: GCDAsyncUdpSocket, didReceive data: Data, fromAddress address: Data, withFilterContext filterContext: Any?) {
+        print("incoming message: \(data)")
+        socketerDelegate.didReceiveData(data)
     }
-    
-    func send(data:NSData){
-        socket.sendData(data, withTimeout: 2, tag: 0)
-        print("localAddress is: \(socket.localAddress())")
-        print("localHost is: \(socket.localHost())")
+
+    func send(data: Data) {
+        guard connectionState == .ready else {
+            socketerDelegate.didNotSend()
+            return
+        }
+
+        socket.send(data, withTimeout: 2, tag: 0)
+        print("localAddress is: \(String(describing: socket.localAddress()))")
+        print("localHost is: \(String(describing: socket.localHost()))")
     }
-    
-    func udpSocket(sock: GCDAsyncUdpSocket!, didConnectToAddress address: NSData!) {
-        print("didConnectToAddress");
+
+    func udpSocket(_ sock: GCDAsyncUdpSocket, didConnectToAddress address: Data) {
+        print("didConnectToAddress")
         socketerDelegate.didConnect()
     }
-    
-    func udpSocket(sock: GCDAsyncUdpSocket!, didNotConnect error: NSError!) {
-        print("didNotConnect \(error)")
+
+    func udpSocket(_ sock: GCDAsyncUdpSocket, didNotConnect error: Error?) {
+        connectionState = .failed
+        socketerDelegate.didNotConnect()
+        print("didNotConnect \(String(describing: error))")
     }
-    
-    func udpSocket(sock: GCDAsyncUdpSocket!, didSendDataWithTag tag: Int) {
+
+    func udpSocket(_ sock: GCDAsyncUdpSocket, didSendDataWithTag tag: Int) {
         print("didSendDataWithTag")
         socketerDelegate.didSend()
     }
-    
-    func udpSocket(sock: GCDAsyncUdpSocket!, didNotSendDataWithTag tag: Int, dueToError error: NSError!) {
+
+    func udpSocket(_ sock: GCDAsyncUdpSocket, didNotSendDataWithTag tag: Int, dueToError error: Error?) {
         print("didNotSendDataWithTag")
         socketerDelegate.didNotSend()
+    }
+
+    func closeConnection() {
+        connectionState = .closed
+        socket?.close()
     }
 }

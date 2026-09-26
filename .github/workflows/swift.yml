@@ -1,5 +1,4 @@
-# This workflow will build a Swift project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-swift
+# This workflow builds and tests the iOS workspace with xcodebuild
 
 name: Swift
 
@@ -11,12 +10,50 @@ on:
 
 jobs:
   build:
-
     runs-on: macos-latest
 
     steps:
     - uses: actions/checkout@v4
-    - name: Build
-      run: swift build -v
+    - name: Set up CocoaPods
+      run: |
+        if ! command -v pod >/dev/null 2>&1; then
+          sudo gem install cocoapods
+        fi
+        pod --version
+    - name: Install dependencies
+      run: pod install --repo-update
+    - name: Select iOS simulator
+      run: |
+        destination="$(
+          python3 - <<'PY'
+          import json
+          import subprocess
+          import sys
+
+          def runtime_sort_key(runtime):
+              if "iOS-" not in runtime:
+                  return ()
+              version = runtime.rsplit("iOS-", 1)[1]
+              return tuple(int(part) for part in version.split("-") if part.isdigit())
+
+          devices = json.loads(
+              subprocess.check_output(
+                  ["xcrun", "simctl", "list", "devices", "available", "-j"],
+                  text=True,
+              )
+          )["devices"]
+
+          for runtime, runtime_devices in sorted(devices.items(), key=lambda item: runtime_sort_key(item[0]), reverse=True):
+              if "iOS" not in runtime:
+                  continue
+              for device in runtime_devices:
+                  if device.get("isAvailable") and device["name"].startswith("iPhone"):
+                      print(f"platform=iOS Simulator,id={device['udid']}")
+                      sys.exit(0)
+
+          raise SystemExit("No available iPhone simulator found")
+          PY
+        )"
+        echo "IOS_DESTINATION=$destination" >> "$GITHUB_ENV"
     - name: Run tests
-      run: swift test -v
+      run: xcodebuild -workspace soulissappios.xcworkspace -scheme soulissappios -configuration Debug -destination "$IOS_DESTINATION" test
