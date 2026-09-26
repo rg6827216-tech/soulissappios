@@ -72,6 +72,6 @@ jobs:
         )
         echo "SIMULATOR_UDID=$SIMULATOR_UDID" >> "$GITHUB_ENV"
     - name: Build
-      run: xcodebuild -workspace soulissappios.xcworkspace -scheme soulissappios -configuration Debug -sdk iphonesimulator -destination "id=$SIMULATOR_UDID" CODE_SIGNING_ALLOWED=NO build-for-testing
+      run: xcodebuild -workspace soulissappios.xcworkspace -scheme soulissappios -configuration Debug -sdk iphonesimulator -destination "id=$SIMULATOR_UDID" -derivedDataPath "$RUNNER_TEMP/DerivedData" CODE_SIGNING_ALLOWED=NO build-for-testing
     - name: Run tests
-      run: xcodebuild -workspace soulissappios.xcworkspace -scheme soulissappios -configuration Debug -sdk iphonesimulator -destination "id=$SIMULATOR_UDID" CODE_SIGNING_ALLOWED=NO test-without-building
+      run: xcodebuild -workspace soulissappios.xcworkspace -scheme soulissappios -configuration Debug -sdk iphonesimulator -destination "id=$SIMULATOR_UDID" -derivedDataPath "$RUNNER_TEMP/DerivedData" CODE_SIGNING_ALLOWED=NO test-without-building
