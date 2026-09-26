@@ -15,6 +15,7 @@ class Socketer: NSObject, GCDAsyncUdpSocketDelegate {
     let PORT: UInt16 = 230
     var socket: GCDAsyncUdpSocket!
     var socketerDelegate: SocketerDelegate
+    private(set) var isUsable = true
     private var isConnected = false
     private var pendingData = [Data]()
 
@@ -32,7 +33,8 @@ class Socketer: NSObject, GCDAsyncUdpSocketDelegate {
             try socket.connect(toHost: IP, onPort: PORT)
             try socket.beginReceiving()
         } catch {
-            pendingData.removeAll()
+            isUsable = false
+            notifyQueuedSendFailures()
             print("Socket setup failed: \(error)")
         }
     }
@@ -43,6 +45,11 @@ class Socketer: NSObject, GCDAsyncUdpSocketDelegate {
     }
 
     func send(data: Data) {
+        guard isUsable else {
+            socketerDelegate.didNotSend()
+            return
+        }
+
         guard isConnected else {
             pendingData.append(data)
             return
@@ -56,6 +63,7 @@ class Socketer: NSObject, GCDAsyncUdpSocketDelegate {
     func udpSocket(_ sock: GCDAsyncUdpSocket, didConnectToAddress address: Data) {
         print("didConnectToAddress")
         isConnected = true
+        isUsable = true
         pendingData.forEach { sock.send($0, withTimeout: 2, tag: 0) }
         pendingData.removeAll()
         socketerDelegate.didConnect()
@@ -63,7 +71,8 @@ class Socketer: NSObject, GCDAsyncUdpSocketDelegate {
 
     func udpSocket(_ sock: GCDAsyncUdpSocket, didNotConnect error: Error?) {
         isConnected = false
-        pendingData.removeAll()
+        isUsable = false
+        notifyQueuedSendFailures()
         print("didNotConnect \(String(describing: error))")
     }
 
@@ -75,5 +84,19 @@ class Socketer: NSObject, GCDAsyncUdpSocketDelegate {
     func udpSocket(_ sock: GCDAsyncUdpSocket, didNotSendDataWithTag tag: Int, dueToError error: Error?) {
         print("didNotSendDataWithTag")
         socketerDelegate.didNotSend()
+    }
+
+    func closeConnection() {
+        isConnected = false
+        isUsable = false
+        pendingData.removeAll()
+        socket?.close()
+    }
+
+    private func notifyQueuedSendFailures() {
+        for _ in pendingData {
+            socketerDelegate.didNotSend()
+        }
+        pendingData.removeAll()
     }
 }
