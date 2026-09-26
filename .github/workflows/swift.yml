@@ -24,6 +24,12 @@ jobs:
         pod --version
     - name: Install dependencies
       run: pod install
+    - name: Verify workspace
+      run: |
+        if [ ! -d soulissappios.xcworkspace ]; then
+          echo "Expected soulissappios.xcworkspace to exist after pod install."
+          exit 1
+        fi
     - name: Select iOS Simulator
       run: |
         SIMULATOR_UDID=$(python3 - <<'PY'
