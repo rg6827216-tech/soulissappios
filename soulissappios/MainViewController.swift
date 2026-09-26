@@ -15,7 +15,6 @@ class MainViewController: UIViewController, SocketerDelegate {
     @IBOutlet weak var responseTextView: UITextView!
 
     var socketer: Socketer?
-    var pendingPayload: Data?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -47,10 +46,11 @@ class MainViewController: UIViewController, SocketerDelegate {
             currentCanBeReused: socketer?.canBeReused ?? false,
             targetIP: ipAddressText
         ) {
-            pendingPayload = endMarker
             socketer?.closeConnection()
             socketer = Socketer(socketerDelegate: self, IP: ipAddressText)
-        } else {
+        }
+
+        if socketer?.canBeReused == true {
             socketer?.send(data: endMarker)
         }
         view.endEditing(true)
@@ -58,14 +58,9 @@ class MainViewController: UIViewController, SocketerDelegate {
 
     func didConnect() {
         responseTextView.text = responseTextView.text + "\nDid Connect"
-        if let pendingPayload {
-            self.pendingPayload = nil
-            socketer?.send(data: pendingPayload)
-        }
     }
 
     func didSend() {
-        pendingPayload = nil
         responseTextView.text = responseTextView.text + "\nDid Send"
     }
 
@@ -74,12 +69,10 @@ class MainViewController: UIViewController, SocketerDelegate {
     }
 
     func didNotConnect() {
-        pendingPayload = nil
         responseTextView.text = responseTextView.text + "\nDid not Connect !"
     }
 
     func didNotSend() {
-        pendingPayload = nil
         responseTextView.text = responseTextView.text + "\nDid not Send !"
     }
 }

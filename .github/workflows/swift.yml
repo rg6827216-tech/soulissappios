@@ -55,7 +55,5 @@ jobs:
           PY
         )"
         echo "IOS_DESTINATION=$destination" >> "$GITHUB_ENV"
-    - name: Build
-      run: xcodebuild -workspace soulissappios.xcworkspace -scheme soulissappios -configuration Debug -destination "$IOS_DESTINATION" build
     - name: Run tests
       run: xcodebuild -workspace soulissappios.xcworkspace -scheme soulissappios -configuration Debug -destination "$IOS_DESTINATION" test
