@@ -19,4 +19,24 @@ jobs:
     - name: Build
       run: xcodebuild -workspace soulissappios.xcworkspace -scheme soulissappios -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO build
     - name: Run tests
-      run: xcodebuild -workspace soulissappios.xcworkspace -scheme soulissappios -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' CODE_SIGNING_ALLOWED=NO test
+      run: |
+        SIMULATOR_UDID=$(python3 - <<'PY'
+        import json
+        import subprocess
+
+        devices = json.loads(subprocess.check_output([
+            "xcrun", "simctl", "list", "devices", "available", "--json"
+        ]))
+
+        for runtime, runtime_devices in devices["devices"].items():
+            if "iOS" not in runtime:
+                continue
+            for device in runtime_devices:
+                if device.get("isAvailable") and device["name"].startswith("iPhone"):
+                    print(device["udid"])
+                    raise SystemExit(0)
+
+        raise SystemExit("No available iOS simulator found")
+        PY
+        )
+        xcodebuild -workspace soulissappios.xcworkspace -scheme soulissappios -destination "id=$SIMULATOR_UDID" CODE_SIGNING_ALLOWED=NO test
