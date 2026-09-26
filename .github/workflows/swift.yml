@@ -39,14 +39,21 @@ jobs:
         devices = json.loads(subprocess.check_output([
             "xcrun", "simctl", "list", "devices", "available", "--json"
         ]))
+        runtimes = json.loads(subprocess.check_output([
+            "xcrun", "simctl", "list", "runtimes", "available", "--json"
+        ]))
 
-        def runtime_key(runtime):
-            suffix = runtime.rsplit("iOS-", 1)[-1]
-            return tuple(int(part) for part in suffix.split("-") if part.isdigit())
+        runtime_versions = {
+            runtime["identifier"]: tuple(
+                int(part) for part in runtime.get("version", "").split(".") if part.isdigit()
+            )
+            for runtime in runtimes["runtimes"]
+            if runtime.get("isAvailable") and "iOS" in runtime.get("name", "")
+        }
 
         ios_runtimes = sorted(
-            (runtime for runtime in devices["devices"] if "iOS" in runtime),
-            key=runtime_key,
+            (runtime for runtime in devices["devices"] if runtime in runtime_versions),
+            key=lambda runtime: runtime_versions[runtime],
             reverse=True,
         )
 
