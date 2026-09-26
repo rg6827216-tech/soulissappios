@@ -11,6 +11,7 @@ import Foundation
 protocol SocketerDelegate {
 
     func didConnect()
+    func didNotConnect()
     func didSend()
     func didNotSend()
     func didReceiveData(_ data: Data)

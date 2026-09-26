@@ -26,6 +26,46 @@ final class soulissappiosTests: XCTestCase {
         XCTAssertNil(NetUtils().splitIPv4(ip: "192.168.0.999"))
     }
 
+    func testShouldCreateNewSocketerWhenNoSocketExists() {
+        XCTAssertTrue(
+            MainViewController.shouldCreateNewSocketer(
+                currentIP: nil,
+                currentIsUsable: false,
+                targetIP: "192.168.0.1"
+            )
+        )
+    }
+
+    func testShouldCreateNewSocketerWhenTargetIPChanges() {
+        XCTAssertTrue(
+            MainViewController.shouldCreateNewSocketer(
+                currentIP: "192.168.0.10",
+                currentIsUsable: true,
+                targetIP: "192.168.0.11"
+            )
+        )
+    }
+
+    func testShouldCreateNewSocketerWhenCurrentSocketIsUnusable() {
+        XCTAssertTrue(
+            MainViewController.shouldCreateNewSocketer(
+                currentIP: "192.168.0.10",
+                currentIsUsable: false,
+                targetIP: "192.168.0.10"
+            )
+        )
+    }
+
+    func testShouldReuseSocketerWhenTargetIPMatchesAndSocketIsUsable() {
+        XCTAssertFalse(
+            MainViewController.shouldCreateNewSocketer(
+                currentIP: "192.168.0.10",
+                currentIsUsable: true,
+                targetIP: "192.168.0.10"
+            )
+        )
+    }
+
     func testPerformanceExample() {
         measure {
         }

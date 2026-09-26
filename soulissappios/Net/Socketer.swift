@@ -11,7 +11,7 @@ import Foundation
 
 class Socketer: NSObject, GCDAsyncUdpSocketDelegate {
 
-    var IP = ""
+    let IP: String
     let PORT: UInt16 = 230
     var socket: GCDAsyncUdpSocket!
     var socketerDelegate: SocketerDelegate
@@ -35,6 +35,7 @@ class Socketer: NSObject, GCDAsyncUdpSocketDelegate {
         } catch {
             isUsable = false
             notifyQueuedSendFailures()
+            socketerDelegate.didNotConnect()
             print("Socket setup failed: \(error)")
         }
     }
@@ -73,6 +74,7 @@ class Socketer: NSObject, GCDAsyncUdpSocketDelegate {
         isConnected = false
         isUsable = false
         notifyQueuedSendFailures()
+        socketerDelegate.didNotConnect()
         print("didNotConnect \(String(describing: error))")
     }
 
