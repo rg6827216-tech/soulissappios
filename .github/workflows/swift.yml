@@ -16,7 +16,62 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    - name: Set up CocoaPods
+      run: |
+        if ! command -v pod >/dev/null 2>&1; then
+          sudo gem install cocoapods
+        fi
+        pod --version
+    - name: Install dependencies
+      run: pod install
+    - name: Verify workspace
+      run: |
+        if [ ! -d soulissappios.xcworkspace ]; then
+          echo "Expected soulissappios.xcworkspace to exist after pod install."
+          exit 1
+        fi
+    - name: Select iOS Simulator
+      run: |
+        SIMULATOR_UDID=$(python3 - <<'PY'
+        import json
+        import subprocess
+
+        devices = json.loads(subprocess.check_output([
+            "xcrun", "simctl", "list", "devices", "available", "--json"
+        ]))
+        runtimes = json.loads(subprocess.check_output([
+            "xcrun", "simctl", "list", "runtimes", "available", "--json"
+        ]))
+
+        runtime_versions = {
+            runtime["identifier"]: tuple(
+                int(part) for part in runtime.get("version", "").split(".") if part.isdigit()
+            )
+            for runtime in runtimes["runtimes"]
+            if runtime.get("isAvailable") and "iOS" in runtime.get("name", "")
+        }
+
+        ios_runtimes = sorted(
+            (runtime for runtime in devices["devices"] if runtime in runtime_versions),
+            key=lambda runtime: runtime_versions[runtime],
+            reverse=True,
+        )
+
+        for runtime in ios_runtimes:
+            runtime_devices = sorted(
+                devices["devices"][runtime],
+                key=lambda device: (device["name"], device["udid"]),
+            )
+            for device in runtime_devices:
+                if device.get("isAvailable") and device["name"].startswith("iPhone"):
+                    print(device["udid"])
+                    raise SystemExit(0)
+
+        raise SystemExit("No available iOS simulator found")
+        PY
+        )
+        echo "SIMULATOR_UDID=$SIMULATOR_UDID" >> "$GITHUB_ENV"
     - name: Build
-      run: swift build -v
+      run: xcodebuild -workspace soulissappios.xcworkspace -scheme soulissappios -configuration Debug -sdk iphonesimulator -destination "id=$SIMULATOR_UDID" -derivedDataPath "$RUNNER_TEMP/DerivedData" CODE_SIGNING_ALLOWED=NO build-for-testing
     - name: Run tests
-      run: swift test -v
+      run: xcodebuild -workspace soulissappios.xcworkspace -scheme soulissappios -configuration Debug -sdk iphonesimulator -destination "id=$SIMULATOR_UDID" -derivedDataPath "$RUNNER_TEMP/DerivedData" CODE_SIGNING_ALLOWED=NO test-without-building
