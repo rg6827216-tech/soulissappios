@@ -16,9 +16,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Build
-      run: xcodebuild -workspace soulissappios.xcworkspace -scheme soulissappios -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO build
-    - name: Run tests
+    - name: Select iOS Simulator
       run: |
         SIMULATOR_UDID=$(python3 - <<'PY'
         import json
@@ -39,4 +37,8 @@ jobs:
         raise SystemExit("No available iOS simulator found")
         PY
         )
-        xcodebuild -workspace soulissappios.xcworkspace -scheme soulissappios -sdk iphonesimulator -destination "id=$SIMULATOR_UDID" CODE_SIGNING_ALLOWED=NO test
+        echo "SIMULATOR_UDID=$SIMULATOR_UDID" >> "$GITHUB_ENV"
+    - name: Build
+      run: xcodebuild -workspace soulissappios.xcworkspace -scheme soulissappios -sdk iphonesimulator -destination "id=$SIMULATOR_UDID" CODE_SIGNING_ALLOWED=NO build-for-testing
+    - name: Run tests
+      run: xcodebuild -workspace soulissappios.xcworkspace -scheme soulissappios -sdk iphonesimulator -destination "id=$SIMULATOR_UDID" CODE_SIGNING_ALLOWED=NO test-without-building
