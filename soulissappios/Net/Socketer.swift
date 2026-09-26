@@ -15,6 +15,8 @@ class Socketer: NSObject, GCDAsyncUdpSocketDelegate {
     let PORT: UInt16 = 230
     var socket: GCDAsyncUdpSocket!
     var socketerDelegate: SocketerDelegate
+    private var isConnected = false
+    private var pendingData = [Data]()
 
     init(socketerDelegate intiSocketerDelegate: SocketerDelegate, IP: String) {
         socketerDelegate = intiSocketerDelegate
@@ -40,6 +42,11 @@ class Socketer: NSObject, GCDAsyncUdpSocketDelegate {
     }
 
     func send(data: Data) {
+        guard isConnected else {
+            pendingData.append(data)
+            return
+        }
+
         socket.send(data, withTimeout: 2, tag: 0)
         print("localAddress is: \(String(describing: socket.localAddress()))")
         print("localHost is: \(String(describing: socket.localHost()))")
@@ -47,10 +54,14 @@ class Socketer: NSObject, GCDAsyncUdpSocketDelegate {
 
     func udpSocket(_ sock: GCDAsyncUdpSocket, didConnectToAddress address: Data) {
         print("didConnectToAddress")
+        isConnected = true
+        pendingData.forEach { sock.send($0, withTimeout: 2, tag: 0) }
+        pendingData.removeAll()
         socketerDelegate.didConnect()
     }
 
     func udpSocket(_ sock: GCDAsyncUdpSocket, didNotConnect error: Error?) {
+        isConnected = false
         print("didNotConnect \(String(describing: error))")
     }
 

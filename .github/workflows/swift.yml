@@ -14,6 +14,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    - name: Set up CocoaPods
+      run: |
+        if ! command -v pod >/dev/null 2>&1; then
+          sudo gem install cocoapods
+        fi
+        pod --version
     - name: Install dependencies
       run: pod install --repo-update
     - name: Select iOS simulator
