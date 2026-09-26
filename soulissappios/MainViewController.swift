@@ -60,11 +60,11 @@ class MainViewController: UIViewController, SocketerDelegate {
         responseTextView.text = responseTextView.text + "\nDid Connect"
         if let pendingPayload {
             socketer?.send(data: pendingPayload)
-            self.pendingPayload = nil
         }
     }
 
     func didSend() {
+        pendingPayload = nil
         responseTextView.text = responseTextView.text + "\nDid Send"
     }
 
@@ -78,6 +78,7 @@ class MainViewController: UIViewController, SocketerDelegate {
     }
 
     func didNotSend() {
+        pendingPayload = nil
         responseTextView.text = responseTextView.text + "\nDid not Send !"
     }
 }
