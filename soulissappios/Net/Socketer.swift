@@ -10,14 +10,23 @@ import CocoaAsyncSocket
 import Foundation
 
 class Socketer: NSObject, GCDAsyncUdpSocketDelegate {
+    private enum ConnectionState {
+        case connecting
+        case connected
+        case failed
+        case closed
+    }
 
     let IP: String
     let PORT: UInt16 = 230
     var socket: GCDAsyncUdpSocket!
     var socketerDelegate: SocketerDelegate
-    private(set) var isUsable = true
-    private var isConnected = false
+    private var connectionState = ConnectionState.connecting
     private var pendingData = [Data]()
+
+    var canBeReused: Bool {
+        connectionState == .connecting || connectionState == .connected
+    }
 
     init(socketerDelegate intiSocketerDelegate: SocketerDelegate, IP: String) {
         socketerDelegate = intiSocketerDelegate
@@ -29,11 +38,10 @@ class Socketer: NSObject, GCDAsyncUdpSocketDelegate {
     func setupConnection() {
         socket = GCDAsyncUdpSocket(delegate: self, delegateQueue: .main)
         do {
-            try socket.bind(toPort: PORT)
             try socket.connect(toHost: IP, onPort: PORT)
             try socket.beginReceiving()
         } catch {
-            isUsable = false
+            connectionState = .failed
             notifyQueuedSendFailures()
             socketerDelegate.didNotConnect()
             print("Socket setup failed: \(error)")
@@ -46,12 +54,12 @@ class Socketer: NSObject, GCDAsyncUdpSocketDelegate {
     }
 
     func send(data: Data) {
-        guard isUsable else {
+        guard connectionState != .failed && connectionState != .closed else {
             socketerDelegate.didNotSend()
             return
         }
 
-        guard isConnected else {
+        guard connectionState == .connected else {
             pendingData.append(data)
             return
         }
@@ -63,16 +71,14 @@ class Socketer: NSObject, GCDAsyncUdpSocketDelegate {
 
     func udpSocket(_ sock: GCDAsyncUdpSocket, didConnectToAddress address: Data) {
         print("didConnectToAddress")
-        isConnected = true
-        isUsable = true
+        connectionState = .connected
         pendingData.forEach { sock.send($0, withTimeout: 2, tag: 0) }
         pendingData.removeAll()
         socketerDelegate.didConnect()
     }
 
     func udpSocket(_ sock: GCDAsyncUdpSocket, didNotConnect error: Error?) {
-        isConnected = false
-        isUsable = false
+        connectionState = .failed
         notifyQueuedSendFailures()
         socketerDelegate.didNotConnect()
         print("didNotConnect \(String(describing: error))")
@@ -89,8 +95,7 @@ class Socketer: NSObject, GCDAsyncUdpSocketDelegate {
     }
 
     func closeConnection() {
-        isConnected = false
-        isUsable = false
+        connectionState = .closed
         pendingData.removeAll()
         socket?.close()
     }

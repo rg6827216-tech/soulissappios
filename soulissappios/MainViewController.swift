@@ -21,8 +21,8 @@ class MainViewController: UIViewController, SocketerDelegate {
         // Do any additional setup after loading the view, typically from a nib.
     }
 
-    static func shouldCreateNewSocketer(currentIP: String?, currentIsUsable: Bool, targetIP: String) -> Bool {
-        currentIP != targetIP || !currentIsUsable
+    static func shouldCreateNewSocketer(currentIP: String?, currentCanBeReused: Bool, targetIP: String) -> Bool {
+        currentIP != targetIP || !currentCanBeReused
     }
 
     @IBAction func sendAction(_ sender: Any) {
@@ -43,7 +43,7 @@ class MainViewController: UIViewController, SocketerDelegate {
         let endMarker = Data([0xc, 0xb, 0x17, ip.fourth, ip.third, 0x6, 0x5, 0x8, 0xb1, 0x0, 0x0, 0x0])
         if Self.shouldCreateNewSocketer(
             currentIP: socketer?.IP,
-            currentIsUsable: socketer?.isUsable ?? false,
+            currentCanBeReused: socketer?.canBeReused ?? false,
             targetIP: ipAddressText
         ) {
             socketer?.closeConnection()

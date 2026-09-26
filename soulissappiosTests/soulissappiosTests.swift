@@ -30,7 +30,7 @@ final class soulissappiosTests: XCTestCase {
         XCTAssertTrue(
             MainViewController.shouldCreateNewSocketer(
                 currentIP: nil,
-                currentIsUsable: false,
+                currentCanBeReused: false,
                 targetIP: "192.168.0.1"
             )
         )
@@ -40,7 +40,7 @@ final class soulissappiosTests: XCTestCase {
         XCTAssertTrue(
             MainViewController.shouldCreateNewSocketer(
                 currentIP: "192.168.0.10",
-                currentIsUsable: true,
+                currentCanBeReused: true,
                 targetIP: "192.168.0.11"
             )
         )
@@ -50,7 +50,7 @@ final class soulissappiosTests: XCTestCase {
         XCTAssertTrue(
             MainViewController.shouldCreateNewSocketer(
                 currentIP: "192.168.0.10",
-                currentIsUsable: false,
+                currentCanBeReused: false,
                 targetIP: "192.168.0.10"
             )
         )
@@ -60,7 +60,7 @@ final class soulissappiosTests: XCTestCase {
         XCTAssertFalse(
             MainViewController.shouldCreateNewSocketer(
                 currentIP: "192.168.0.10",
-                currentIsUsable: true,
+                currentCanBeReused: true,
                 targetIP: "192.168.0.10"
             )
         )
