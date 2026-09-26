@@ -11,8 +11,7 @@ import Foundation
 
 class Socketer: NSObject, GCDAsyncUdpSocketDelegate {
     private enum ConnectionState {
-        case connecting
-        case connected
+        case ready
         case failed
         case closed
     }
@@ -21,11 +20,10 @@ class Socketer: NSObject, GCDAsyncUdpSocketDelegate {
     let PORT: UInt16 = 230
     var socket: GCDAsyncUdpSocket!
     var socketerDelegate: SocketerDelegate
-    private var connectionState = ConnectionState.connecting
-    private var pendingData = [Data]()
+    private var connectionState = ConnectionState.ready
 
     var canBeReused: Bool {
-        connectionState == .connecting || connectionState == .connected
+        connectionState == .ready
     }
 
     init(socketerDelegate intiSocketerDelegate: SocketerDelegate, IP: String) {
@@ -38,12 +36,10 @@ class Socketer: NSObject, GCDAsyncUdpSocketDelegate {
     func setupConnection() {
         socket = GCDAsyncUdpSocket(delegate: self, delegateQueue: .main)
         do {
-            try socket.bind(toPort: PORT)
             try socket.connect(toHost: IP, onPort: PORT)
             try socket.beginReceiving()
         } catch {
             connectionState = .failed
-            notifyQueuedSendFailures()
             socketerDelegate.didNotConnect()
             print("Socket setup failed: \(error)")
         }
@@ -55,13 +51,8 @@ class Socketer: NSObject, GCDAsyncUdpSocketDelegate {
     }
 
     func send(data: Data) {
-        guard connectionState != .failed && connectionState != .closed else {
+        guard connectionState == .ready else {
             socketerDelegate.didNotSend()
-            return
-        }
-
-        guard connectionState == .connected else {
-            pendingData.append(data)
             return
         }
 
@@ -72,15 +63,11 @@ class Socketer: NSObject, GCDAsyncUdpSocketDelegate {
 
     func udpSocket(_ sock: GCDAsyncUdpSocket, didConnectToAddress address: Data) {
         print("didConnectToAddress")
-        connectionState = .connected
-        pendingData.forEach { sock.send($0, withTimeout: 2, tag: 0) }
-        pendingData.removeAll()
         socketerDelegate.didConnect()
     }
 
     func udpSocket(_ sock: GCDAsyncUdpSocket, didNotConnect error: Error?) {
         connectionState = .failed
-        notifyQueuedSendFailures()
         socketerDelegate.didNotConnect()
         print("didNotConnect \(String(describing: error))")
     }
@@ -97,14 +84,6 @@ class Socketer: NSObject, GCDAsyncUdpSocketDelegate {
 
     func closeConnection() {
         connectionState = .closed
-        pendingData.removeAll()
         socket?.close()
-    }
-
-    private func notifyQueuedSendFailures() {
-        for _ in pendingData {
-            socketerDelegate.didNotSend()
-        }
-        pendingData.removeAll()
     }
 }
