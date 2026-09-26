@@ -16,6 +16,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    - name: Set up CocoaPods
+      run: |
+        if ! command -v pod >/dev/null 2>&1; then
+          sudo gem install cocoapods
+        fi
+        pod --version
     - name: Install dependencies
       run: pod install
     - name: Select iOS Simulator
@@ -28,9 +34,21 @@ jobs:
             "xcrun", "simctl", "list", "devices", "available", "--json"
         ]))
 
-        for runtime, runtime_devices in devices["devices"].items():
-            if "iOS" not in runtime:
-                continue
+        def runtime_key(runtime):
+            suffix = runtime.rsplit("iOS-", 1)[-1]
+            return tuple(int(part) for part in suffix.split("-") if part.isdigit())
+
+        ios_runtimes = sorted(
+            (runtime for runtime in devices["devices"] if "iOS" in runtime),
+            key=runtime_key,
+            reverse=True,
+        )
+
+        for runtime in ios_runtimes:
+            runtime_devices = sorted(
+                devices["devices"][runtime],
+                key=lambda device: (device["name"], device["udid"]),
+            )
             for device in runtime_devices:
                 if device.get("isAvailable") and device["name"].startswith("iPhone"):
                     print(device["udid"])
