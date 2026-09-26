@@ -32,6 +32,7 @@ class Socketer: NSObject, GCDAsyncUdpSocketDelegate {
             try socket.connect(toHost: IP, onPort: PORT)
             try socket.beginReceiving()
         } catch {
+            pendingData.removeAll()
             print("Socket setup failed: \(error)")
         }
     }
@@ -62,6 +63,7 @@ class Socketer: NSObject, GCDAsyncUdpSocketDelegate {
 
     func udpSocket(_ sock: GCDAsyncUdpSocket, didNotConnect error: Error?) {
         isConnected = false
+        pendingData.removeAll()
         print("didNotConnect \(String(describing: error))")
     }
 

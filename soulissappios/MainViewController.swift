@@ -37,14 +37,11 @@ class MainViewController: UIViewController, SocketerDelegate {
         }
 
         let endMarker = Data([0xc, 0xb, 0x17, ip.fourth, ip.third, 0x6, 0x5, 0x8, 0xb1, 0x0, 0x0, 0x0])
-        if let sock = socketer {
-            sock.send(data: endMarker)
-        } else {
-            let socket = Socketer(socketerDelegate: self, IP: ipAddressText)
-            socketer = socket
-            socket.send(data: endMarker)
+        if socketer?.IP != ipAddressText {
+            socketer = Socketer(socketerDelegate: self, IP: ipAddressText)
         }
 
+        socketer?.send(data: endMarker)
         view.endEditing(true)
     }
 
