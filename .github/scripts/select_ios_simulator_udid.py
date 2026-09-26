@@ -13,7 +13,20 @@ for runtime, runtime_devices in devices.items():
     version = (int(match.group(1)), int(match.group(2) or 0))
     for device in runtime_devices:
         if device.get("isAvailable") and device.get("name", "").startswith("iPhone"):
-            candidates.append((version, device["name"], device["udid"]))
+            candidates.append(
+                {
+                    "version": version,
+                    "name": device["name"],
+                    "udid": device["udid"],
+                }
+            )
 
-candidates.sort(key=lambda item: (item[0][0], item[0][1], item[1]), reverse=True)
-print(candidates[0][2] if candidates else "")
+candidates.sort(
+    key=lambda candidate: (
+        candidate["version"][0],
+        candidate["version"][1],
+        candidate["name"],
+    ),
+    reverse=True,
+)
+print(candidates[0]["udid"] if candidates else "")
