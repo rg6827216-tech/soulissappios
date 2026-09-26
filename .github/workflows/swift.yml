@@ -18,4 +18,10 @@ jobs:
     - name: Build
       run: xcodebuild -workspace soulissappios.xcworkspace -scheme soulissappios -destination 'generic/platform=iOS Simulator' build
     - name: Run tests
-      run: xcodebuild -workspace soulissappios.xcworkspace -scheme soulissappios -destination 'platform=iOS Simulator,OS=latest,name=iPhone 16' test
+      run: |
+        DESTINATION_ID=$(xcrun simctl list devices available iOS | grep "iPhone" | head -n 1 | sed -E 's/.*\(([-A-F0-9]+)\).*/\1/')
+        if [ -z "$DESTINATION_ID" ]; then
+          echo "No available iOS iPhone simulator found"
+          exit 1
+        fi
+        xcodebuild -workspace soulissappios.xcworkspace -scheme soulissappios -destination "id=$DESTINATION_ID" test
