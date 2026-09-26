@@ -6,6 +6,7 @@
 //  Copyright (c) 2015 Souliss. All rights reserved.
 //
 
+import UIKit
 import XCTest
 @testable import soulissappios
 
@@ -64,6 +65,15 @@ final class soulissappiosTests: XCTestCase {
                 targetIP: "192.168.0.10"
             )
         )
+    }
+
+    func testDidNotConnectAppendsFailureMessage() {
+        let viewController = MainViewController()
+        viewController.responseTextView = UITextView()
+
+        viewController.didNotConnect()
+
+        XCTAssertEqual(viewController.responseTextView.text, "\nDid not Connect !")
     }
 
     func testPerformanceExample() {
